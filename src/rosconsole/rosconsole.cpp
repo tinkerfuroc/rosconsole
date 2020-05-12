@@ -36,6 +36,7 @@
 #include "ros/console.h"
 #include "ros/console_impl.h"
 #include "ros/assert.h"
+// #include <ros/ros.h>
 #include <ros/time.h>
 
 #include <boost/thread.hpp>
@@ -184,15 +185,16 @@ struct TimeToken : public Token
   virtual std::string getString(void*, ::ros::console::Level, const char*, const char*, const char*, int)
   {
     // TODO(lucasw) make this configurable
-    const size_t decimals = 3;
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(decimals) << ros::WallTime::now().toSec();
+    ss << std::fixed << std::setprecision(decimals_) << ros::WallTime::now().toSec();
     if (ros::Time::isValid() && ros::Time::isSimTime())
     {
-      ss << ", " << std::fixed << std::setprecision(decimals) << ros::Time::now().toSec();
+      ss << ", " << std::fixed << std::setprecision(decimals_) << ros::Time::now().toSec();
     }
     return ss.str();
   }
+
+  const size_t decimals_ = 3;
 };
 
 struct WallTimeToken : public Token
@@ -200,10 +202,41 @@ struct WallTimeToken : public Token
   virtual std::string getString(void*, ::ros::console::Level, const char*, const char*, const char*, int)
   {
     std::stringstream ss;
-    const size_t decimals = 3;
-    ss << std::fixed << std::setprecision(decimals) << ros::WallTime::now().toSec();
+    ss << std::fixed << std::setprecision(decimals_) << ros::WallTime::now().toSec();
     return ss.str();
   }
+
+  const size_t decimals_ = 3;
+};
+
+struct ElapsedTimeToken : public Token
+{
+  ElapsedTimeToken()
+  {
+    start_time_ = ros::Time(0);
+    // TODO(lucasw) race condition issues here
+#if 0
+    if (ros::param::has("/start_time")) {
+      ros::param::get("/start_time", start_time_);
+    } else {
+      ros::param::set("/start_time", start_time_);
+    }
+#endif
+  }
+
+  virtual std::string getString(void*, ::ros::console::Level, const char*, const char*, const char*, int)
+  {
+    if (start_time_ == ros::Time(0)) {
+      // TODO(lucasw) this could be way out of sync with rospy
+      start_time_ = ros::Time::now();
+    }
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(decimals_) << (ros::Time::now() - start_time_).toSec();
+    return ss.str();
+  }
+
+  ros::Time start_time_;
+  const size_t decimals_ = 3;
 };
 
 struct ThreadToken : public Token
@@ -287,6 +320,10 @@ TokenPtr createTokenFromType(const std::string& type)
   else if (type == "walltime")
   {
     return TokenPtr(boost::make_shared<WallTimeToken>());
+  }
+  else if (type == "elapsedtime")
+  {
+    return TokenPtr(boost::make_shared<ElapsedTimeToken>());
   }
   else if (type == "thread")
   {
