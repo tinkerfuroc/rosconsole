@@ -355,21 +355,20 @@ protected:
 };
 
 LOG4CXX_PTR_DEF(Log4cxxAppender);
-Log4cxxAppender* g_log4cxx_appender = 0;
+Log4cxxAppenderPtr g_log4cxx_appender;
 
 void register_appender(LogAppender* appender)
 {
-  g_log4cxx_appender = new Log4cxxAppender(appender);
+  g_log4cxx_appender = Log4cxxAppenderPtr(new Log4cxxAppender(appender));
   const log4cxx::LoggerPtr& logger = log4cxx::Logger::getLogger(ROSCONSOLE_ROOT_LOGGER_NAME);
-  logger->addAppender(Log4cxxAppenderPtr(g_log4cxx_appender));
+  logger->addAppender(g_log4cxx_appender);
 }
 
 void deregister_appender(LogAppender* appender){
   if(g_log4cxx_appender->getAppender() == appender)
   {
     const log4cxx::LoggerPtr& logger = log4cxx::Logger::getLogger(ROSCONSOLE_ROOT_LOGGER_NAME);
-    logger->removeAppender(Log4cxxAppenderPtr(g_log4cxx_appender));
-    delete g_log4cxx_appender;
+    logger->removeAppender(g_log4cxx_appender);
     g_log4cxx_appender = 0;
   }
 }
@@ -378,7 +377,7 @@ void shutdown()
   if(g_log4cxx_appender)
   {
     const log4cxx::LoggerPtr& logger = log4cxx::Logger::getLogger(ROSCONSOLE_ROOT_LOGGER_NAME);
-    logger->removeAppender(Log4cxxAppenderPtr(g_log4cxx_appender));
+    logger->removeAppender(g_log4cxx_appender);
     g_log4cxx_appender = 0;
   }
   // reset this so that the logger doesn't get crashily destroyed

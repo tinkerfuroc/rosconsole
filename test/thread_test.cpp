@@ -84,6 +84,8 @@ protected:
   }
 };
 
+LOG4CXX_PTR_DEF(TestAppender);
+
 void threadFunc(boost::barrier* b)
 {
   b->wait();
@@ -95,7 +97,7 @@ TEST(Rosconsole, threadedCalls)
 {
   log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
 
-  TestAppender* appender = new TestAppender;
+  TestAppenderPtr appender(new TestAppender());
   logger->addAppender( appender );
 
   boost::thread_group tg;
