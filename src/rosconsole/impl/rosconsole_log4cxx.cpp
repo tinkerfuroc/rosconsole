@@ -386,7 +386,11 @@ void shutdown()
   //
   // See https://code.ros.org/trac/ros/ticket/3271
   //
-  log4cxx::Logger::getRootLogger()->getLoggerRepository()->shutdown();
+  // TODO(lucasw) this looks to work on 22.04 and 22.10
+  static_cast<log4cxx::spi::LoggerRepositoryPtr>(log4cxx::Logger::getRootLogger()->getLoggerRepository())->shutdown();
+
+  // This works on only Ubuntu 22.10
+  // log4cxx::Logger::getRootLogger()->getLoggerRepository()->shutdown();
 }
 
 } // namespace impl
